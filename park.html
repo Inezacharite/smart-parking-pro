@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartPark Pro - by Charity</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    header img {
+      width: 80px;
+      height: 80px;
+    }
+
+    h1 {
+      font-size: 2em;
+      color: #00ffcc;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    input, button {
+      padding: 15px;
+      margin: 8px 5px;
+      font-size: 1.1em;
+      border-radius: 5px;
+      border: none;
+    }
+
+    input {
+      width: 60%;
+    }
+
+    button {
+      background-color: #00ffcc;
+      color: #000;
+      cursor: pointer;
+    }
+
+    .car-list, .receipt {
+      margin-top: 25px;
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 1.1em;
+    }
+
+    .receipt {
+      background: white;
+      color: black;
+      display: none;
+    }
+
+    footer {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 1em;
+      color: #aaa;
+    }
+
+    @media screen and (max-width: 768px) {
+      input {
+        width: 100%;
+      }
+      button {
+        width: 100%;
+      }
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      .receipt, .receipt * {
+        visibility: visible;
+      }
+      .receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 30px;
+        background: white !important;
+        color: black !important;
+      }
+      .receipt button {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="parking_PNG69.png" alt="SmartPark Logo" />
+      <h1>SmartPark Pro</h1>
+    </header>
+
+    <p><strong>Utilization:</strong> <span id="utilization">0/50</span> spaces used</p>
+
+    <div>
+      <input type="text" id="addPlateInput" placeholder="Enter plate number" />
+      <button onclick="addCar()">Enter Car</button><br>
+
+      <input type="text" id="removePlateInput" placeholder="Enter plate number" />
+      <button onclick="removeCar()">Remove Car</button><br>
+
+      <button onclick="listCars()">List of parked Cars</button>
+    </div>
+
+    <div id="carList" class="car-list"></div>
+
+    <div id="receipt" class="receipt"></div>
+
+    <footer>
+      © 2025 SmartPark Pro | Developed by Charity
+    </footer>
+  </div>
+
+  <script>
+    const maxCapacity = 50;
+    const carPark = [];
+
+    function getCurrentTime() {
+      return new Date();
+    }
+
+    function updateUtilization() {
+      document.getElementById('utilization').textContent = `${carPark.length}/${maxCapacity}`;
+    }
+
+    function addCar() {
+      if (carPark.length >= maxCapacity) {
+        alert("Parking full!");
+        return;
+      }
+
+      const plate = document.getElementById("addPlateInput").value.trim().toUpperCase();
+      if (!plate) return alert("Enter a valid plate number.");
+
+      if (carPark.some(car => car.plate === plate)) {
+        alert("This car is already parked.");
+        return;
+      }
+
+      const timeIn = getCurrentTime();
+      carPark.push({ plate, timeIn });
+
+      alert(`Car ${plate} has been entered.`);
+      updateUtilization();
+      document.getElementById("addPlateInput").value = "";
+    }
+
+    function removeCar() {
+      const plate = document.getElementById("removePlateInput").value.trim().toUpperCase();
+      if (!plate) return alert("Enter a valid plate number.");
+
+      const index = carPark.findIndex(car => car.plate === plate);
+      if (index === -1) return alert("Car not found.");
+
+      const car = carPark[index];
+      const timeOut = getCurrentTime();
+      const hours = Math.ceil((timeOut - car.timeIn) / 3600000);
+      const fee = hours <= 1 ? 500 : 500 + (hours - 1) * 300;
+
+      carPark.splice(index, 1);
+      updateUtilization();
+
+      document.getElementById("receipt").style.display = "block";
+      document.getElementById("receipt").innerHTML = `
+        <div style="text-align:center;">
+          <img src="parking_PNG69.png" alt="SmartPark Logo" style="width:80px;height:80px;margin-bottom:10px;" />
+          <h2>Parking Receipt</h2>
+        </div>
+        <p><strong>Plate:</strong> ${car.plate}</p>
+        <p><strong>Time In:</strong> ${car.timeIn.toLocaleString()}</p>
+        <p><strong>Time Out:</strong> ${timeOut.toLocaleString()}</p>
+        <p><strong>Duration:</strong> ${hours} hour(s)</p>
+        <p><strong>Amount:</strong> Rwf ${fee}</p>
+        <div style="text-align:center; margin-top:20px;">
+          <button onclick="window.print()">Print</button>
+        </div>
+      `;
+
+      document.getElementById("removePlateInput").value = "";
+      listCars();
+    }
+
+    function listCars() {
+      const listDiv = document.getElementById("carList");
+      if (carPark.length === 0) {
+        listDiv.innerHTML = "<h3>No cars currently parked.</h3>";
+        return;
+      }
+      listDiv.innerHTML = "<h3>Parked Cars</h3>";
+      carPark.forEach(car => {
+        listDiv.innerHTML += `<p>${car.plate} | Time In: ${car.timeIn.toLocaleString()}</p>`;
+      });
+    }
+
+    updateUtilization();
+  </script>
+</body>
+</html>
